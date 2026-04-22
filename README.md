@@ -2,12 +2,11 @@
 
 ![Banner](AgriQpro-Banner.jpeg)
 # AgriQPro - Quantum-Driven Precision Optimization for Smart Agriculture
+
 <p align="center">
   <a href="https://agriqpro.streamlit.app/">
-    <img src="https://static.streamlit.io/badges/streamlit_badge_black_white_white.svg" width="100%"/>
-  </a>
 </p>
-🚀 **Live Demo**: Experience the model in action at [agriqpro.streamlit.app](https://agriqpro.streamlit.app/)
+<h4>🚀 Live Demo: Experience the model in action at [agriqpro.streamlit.app] --> (https://agriqpro.streamlit.app/)</h4>
 
 **Dataset Access**: The dataset used in this research is available upon request. Please contact **[srinivaspraveen043@gmail.com](mailto:srinivaspraveen043@gmail.com)** for access.
 
