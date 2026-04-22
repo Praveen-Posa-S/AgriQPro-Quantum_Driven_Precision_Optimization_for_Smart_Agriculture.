@@ -5,14 +5,17 @@ __pycache__/
 # VS Code
 .vscode/
 
-# Environments
+# Virtual environments
 venv/
 .env/
 
-# Checkpoints
+# Ignore ALL training checkpoints
 checkpoints/*.pth
 
-# Datasets (local / Google Drive)
+# Allow ONLY quantized deployment model
+!models/best_model_quantized.pth
+
+# Datasets
 Datasets/
 Test_Dataset/
 data/

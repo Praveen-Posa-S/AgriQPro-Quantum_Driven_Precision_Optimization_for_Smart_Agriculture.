@@ -6,6 +6,8 @@ from PIL import Image
 import pandas as pd
 import os
 import sys
+import matplotlib.pyplot as plt
+import streamlit.components.v1 as components
 
 # Ensure we can import from the current directory
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -14,12 +16,104 @@ from model import AgriQPro
 
 # Constants
 CLASSES = ['Bacterial Leaf Disease', 'Dried Leaf', 'Fungal Brown Spot Disease', 'Healthy_Leaf', 'Leaf_Rot', 'Leaf_Spot']
+
+DISEASE_INFO = {
+    'Healthy_Leaf': {
+        'symptoms': [
+            "Bright green color",
+            "Smooth and shiny surface",
+            "No spots or discoloration",
+            "Uniform leaf structure"
+        ],
+        'solutions': [
+            "No treatment required",
+            "Maintain proper watering",
+            "Ensure adequate sunlight",
+            "Regular monitoring"
+        ]
+    },
+    'Bacterial Leaf Disease': {
+        'symptoms': [
+            "Irregular brown or black lesions",
+            "Yellow halo around spots",
+            "Water-soaked appearance",
+            "Spots increase over time"
+        ],
+        'solutions': [
+            "Remove infected leaves immediately",
+            "Apply copper-based bactericide",
+            "Avoid overhead watering",
+            "Maintain field hygiene"
+        ]
+    },
+    'Dried Leaf': {
+        'symptoms': [
+            "Leaf turns completely brown/yellow",
+            "Dry and brittle texture",
+            "Loss of moisture",
+            "No distinct spot pattern"
+        ],
+        'solutions': [
+            "Improve irrigation schedule",
+            "Check soil nutrients",
+            "Remove dried leaves",
+            "Monitor surrounding plants"
+        ]
+    },
+    'Fungal Brown Spot Disease': {
+        'symptoms': [
+            "Yellowing of leaf (chlorosis)",
+            "Brown necrotic spots",
+            "Spots may merge",
+            "Reduced leaf health"
+        ],
+        'solutions': [
+            "Apply fungicide (Mancozeb/Carbendazim)",
+            "Remove infected leaves",
+            "Improve air circulation",
+            "Avoid high humidity"
+        ]
+    },
+    'Leaf_Rot': {
+        'symptoms': [
+            "Dark brown/black rotting patches",
+            "Soft and wet texture",
+            "Tissue breakdown",
+            "Rapid spreading"
+        ],
+        'solutions': [
+            "Remove infected leaves immediately",
+            "Improve drainage",
+            "Avoid overwatering",
+            "Apply fungicide (Metalaxyl)"
+        ]
+    },
+    'Leaf_Spot': {
+        'symptoms': [
+            "Small scattered spots",
+            "Light discoloration",
+            "Early-stage infection",
+            "No major damage yet"
+        ],
+        'solutions': [
+            "Apply fungicide early",
+            "Remove affected leaves",
+            "Monitor spread regularly",
+            "Maintain proper plant spacing"
+        ]
+    }
+}
 IMG_SIZE = 224
 MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
 
 # Page config
-st.set_page_config(page_title="AgriQPro - Plant Disease Detection", page_icon="🌿")
+st.set_page_config(page_title="AgriQPro - Plant Disease Detection", page_icon="🌿", layout="wide")
+
+# Banner image
+banner_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "AgriQpro-Banner.jpeg")
+if os.path.exists(banner_path):
+    st.image(banner_path, use_column_width=True)
 
 st.title("🌿 AgriQPro – Quantum Driven Precision Optimization for Smart Agriculture")
 st.write("Upload a Betel Vine leaf image to detect diseases using the SwinV2 + QIFI model.")
@@ -102,14 +196,17 @@ uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png
 if uploaded_file is not None and model is not None:
     image = Image.open(uploaded_file).convert('RGB')
     
-    # Display columns
-    col1, col2 = st.columns(2)
+    # Page Layout
+    col_img, col_info_pane = st.columns(2)
     
-    with col1:
+    with col_img:
         st.image(image, caption='Uploaded Image', use_column_width=True)
-    
-    with col2:
-        if st.button("Predict Disease"):
+        graph_placeholder = st.empty()
+        
+    with col_info_pane:
+        run_prediction = st.button("Predict Disease", use_container_width=True)
+        
+        if run_prediction:
             with st.spinner("Classifying..."):
                 # Preprocess
                 input_tensor = preprocess_image(image)
@@ -125,19 +222,47 @@ if uploaded_file is not None and model is not None:
                 # Result
                 class_name = CLASSES[predicted_class.item()]
                 conf_score = confidence.item() * 100
+                probs_np = probs.cpu().numpy()[0]
                 
                 st.success(f"**Prediction:** {class_name}")
                 st.info(f"**Confidence:** {conf_score:.2f}%")
                 
-                # Detailed probabilities Graph
+                # Disease Information Section
+                st.write("---")
+                st.subheader("Disease Information")
+                info = DISEASE_INFO.get(class_name)
+                if info:
+                    info_col1, info_col2 = st.columns(2)
+                    with info_col1:
+                        st.markdown("**Symptoms:**")
+                        for sym in info['symptoms']:
+                            st.markdown(f"- {sym}")
+                    with info_col2:
+                        st.markdown("**Solution:**")
+                        for sol in info['solutions']:
+                            st.markdown(f"- {sol}")
+                            
+            with graph_placeholder:
+                # Bar Chart
                 st.write("---")
                 st.write("**Confidence Scores:**")
-                probs_np = probs.cpu().numpy()[0]
-                
-                # Create DataFrame for plotting
                 df = pd.DataFrame({
                     'Disease': CLASSES,
                     'Confidence': probs_np
                 })
-                
                 st.bar_chart(df.set_index('Disease'))
+                
+            # Auto-scroll magic
+            components.html(
+                """
+                <script>
+                    const body = window.parent.document.querySelector('.main');
+                    if(body){
+                        body.scrollTo({top: body.scrollHeight * 0.30, behavior: 'smooth'});
+                    }else{
+                        window.parent.scrollTo({top: window.parent.document.body.scrollHeight * 0.30, behavior: 'smooth'});
+                    }
+                </script>
+                """,
+                height=0
+            )
